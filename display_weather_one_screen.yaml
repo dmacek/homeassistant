@@ -1,0 +1,156 @@
+esphome:
+  name: display-chodba
+  friendly_name: Display chodba
+
+esp8266:
+  board: nodemcuv2 #esp01_1m
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "__FILL_HERE__"
+
+ota:
+  password: "__FILL_HERE__"
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Test-8266 Fallback Hotspot"
+    password: "fGKCZHhbUe7T"
+
+captive_portal:
+
+font:
+  - file: 'arial-narrow.ttf'
+    id: font_arial
+    size: 18
+
+  - file: 'arial-narrow-bold.ttf'
+    id: font_arial_bold
+    size: 38
+
+# weather icons - https://erikflowers.github.io/weather-icons/
+  - file: 'weathericons.ttf'
+    id: font_weather_big
+    size: 30
+    glyphs: [
+      '', #Thunderstorm
+      '', #windy,windy-variant
+      '', #Drizzle
+      '', #Rain
+      '', #Snow
+      '', #Mist,Smoke,Haze,Dust,Fog,Sand,Ash,Squall,Tornado
+      '', #cloudy
+      '', #partlycloudy
+      '', #sunny
+      '', #clear-night
+      '' #refresh
+    ]
+
+  - file: 'weathericons.ttf'
+    id: font_weather_small
+    size: 18
+    glyphs: [
+      '', #Thunderstorm
+      '', #windy,windy-variant
+      '', #Drizzle
+      '', #Rain
+      '', #Snow
+      '', #Mist,Smoke,Haze,Dust,Fog,Sand,Ash,Squall,Tornado
+      '', #cloudy
+      '', #partlycloudy
+      '', #sunny
+      '', #clear-night
+      '' #refresh
+    ]
+
+sensor:
+  - platform: homeassistant
+    id: forecast_temperature
+    entity_id: sensor.openweathermap_forecast_temperature
+    internal: true
+  
+  - platform: homeassistant
+    id: forecast_temperature_low
+    entity_id: sensor.openweathermap_forecast_temperature_low
+    internal: true
+
+  - platform: homeassistant
+    id: outside_temperature
+    entity_id: sensor.teplomer_venku_temperature
+    internal: true
+
+text_sensor:
+  - platform: homeassistant
+    id: forecast_condition
+    entity_id: sensor.openweathermap_forecast_condition
+    internal: true
+  
+  - platform: homeassistant
+    id: current_condition
+    entity_id: sensor.openweathermap_condition
+    internal: true
+
+i2c:
+  sda: D1
+  scl: D2
+
+display:
+  - platform: ssd1306_i2c
+    model: "SSD1306 128x64"
+    id: "my_display"
+    reset_pin: D0
+    address: 0x3C
+    pages:
+      - id: page1
+        lambda: |-
+          it.printf(128, 0,   id(font_arial_bold), TextAlign::TOP_RIGHT, "%.1f°C", id(outside_temperature).state);
+          it.line(0, 42, 128, 42);
+          it.printf(24,   60,  id(font_arial), TextAlign::BASELINE_LEFT , "D: %.1f°", id(forecast_temperature).state);
+          it.printf(128, 60, id(font_arial), TextAlign::BASELINE_RIGHT , "N: %.1f°", id(forecast_temperature_low).state);
+          std::map<std::string, std::string> weather_state { 
+                { "lightning", "" },
+                { "lightning-rainy", "" },
+                { "hail", "" },
+                { "rainy", "" },
+                { "pouring", "" },
+                { "snowy", "" },
+                { "snowy-rainy", "" },
+                { "exceptional", "" },
+                { "fog", "" },
+                { "partlycloudy", "" },
+                { "windy-variant", "" },
+                { "windy", "" },
+                { "cloudy", "" },
+                { "sunny", "" },
+                { "clear-night", "" }
+            };
+          if (id(current_condition).has_state()) {
+            it.printf(0, 0, id(font_weather_big), TextAlign::TOP_LEFT, weather_state[id(current_condition).state.c_str()].c_str());
+          } else {
+            it.printf(0, 0, id(font_weather_big), TextAlign::TOP_LEFT, "");
+          }
+          if (id(forecast_condition).has_state()) {
+            it.printf(0, 60, id(font_weather_small), TextAlign::BASELINE_LEFT, weather_state[id(forecast_condition).state].c_str());
+          } else {
+            it.printf(0, 60, id(font_weather_small), TextAlign::BASELINE_LEFT, "");
+          }
+
+time:
+  - platform: homeassistant
+    on_time:
+      # Every morning turn on
+      - cron: '0 25 6 * * *'
+        then:
+          - lambda: id(my_display).turn_on();
+      # Every night turn off
+      - cron: '0 0 21 * * *'
+        then:
+          - lambda: id(my_display).turn_off();
