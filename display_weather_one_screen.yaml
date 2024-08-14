@@ -73,24 +73,24 @@ font:
 
 sensor:
   - platform: homeassistant
-    id: forecast_temperature
-    entity_id: sensor.openweathermap_forecast_temperature
+    id: forecast_temperature_high
+    entity_id: sensor.weather_forecast_today_high
     internal: true
   
   - platform: homeassistant
     id: forecast_temperature_low
-    entity_id: sensor.openweathermap_forecast_temperature_low
+    entity_id: sensor.weather_forecast_today_low
     internal: true
 
   - platform: homeassistant
     id: outside_temperature
-    entity_id: sensor.teplomer_venku_temperature
+    entity_id: sensor.openweathermap_feels_like_temperature
     internal: true
 
 text_sensor:
   - platform: homeassistant
     id: forecast_condition
-    entity_id: sensor.openweathermap_forecast_condition
+    entity_id: sensor.weather_forecast_today_condition
     internal: true
   
   - platform: homeassistant
@@ -111,10 +111,11 @@ display:
     pages:
       - id: page1
         lambda: |-
-          it.printf(128, 0,   id(font_arial_bold), TextAlign::TOP_RIGHT, "%.1f°C", id(outside_temperature).state);
+          it.printf(128, 0,   id(font_arial_bold), TextAlign::TOP_RIGHT, "%.1f°", id(outside_temperature).state);
           it.line(0, 42, 128, 42);
-          it.printf(24,   60,  id(font_arial), TextAlign::BASELINE_LEFT , "D: %.1f°", id(forecast_temperature).state);
-          it.printf(128, 60, id(font_arial), TextAlign::BASELINE_RIGHT , "N: %.1f°", id(forecast_temperature_low).state);
+          //it.printf(24,   60,  id(font_arial), TextAlign::BASELINE_LEFT , "%.1f°", id(forecast_temperature_high).state);
+          //it.printf(128, 60, id(font_arial), TextAlign::BASELINE_RIGHT , "N: %.1f°", id(forecast_temperature_low).state);
+          it.printf(128, 60, id(font_arial), TextAlign::BASELINE_RIGHT , " %.1f°  /  %.1f°", id(forecast_temperature_low).state, id(forecast_temperature_high).state);
           std::map<std::string, std::string> weather_state { 
                 { "lightning", "" },
                 { "lightning-rainy", "" },
@@ -147,10 +148,10 @@ time:
   - platform: homeassistant
     on_time:
       # Every morning turn on
-      - cron: '0 25 6 * * *'
+      - cron: '0 25 5 * * *'
         then:
           - lambda: id(my_display).turn_on();
       # Every night turn off
-      - cron: '0 0 21 * * *'
+      - cron: '0 0 22 * * *'
         then:
           - lambda: id(my_display).turn_off();
