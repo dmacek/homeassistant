@@ -19,14 +19,15 @@ ota:
 wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
+  output_power: 8.5dB
 
   # Enable fallback hotspot (captive portal) in case wifi connection fails
   ap:
-    ssid: "Test-8266 Fallback Hotspot"
-    password: "fGKCZHhbUe7T"
+    ssid: "Display-Chodba Fallback Hotspot"
+    password: "LsLZ0oFzTs27"
 
 captive_portal:
-
+    
 font:
   - file: 'arial-narrow.ttf'
     id: font_arial
@@ -84,7 +85,8 @@ sensor:
 
   - platform: homeassistant
     id: outside_temperature
-    entity_id: sensor.openweathermap_feels_like_temperature
+    entity_id: weather.forecast_home
+    attribute: temperature
     internal: true
 
 text_sensor:
@@ -101,6 +103,7 @@ text_sensor:
 i2c:
   sda: D1
   scl: D2
+  frequency: 100kHz
 
 display:
   - platform: ssd1306_i2c
